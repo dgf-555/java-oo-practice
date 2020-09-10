@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 
 import characters.*;
+import com.sun.org.apache.xpath.internal.objects.XBoolean;
 import com.twu.*;
 
 public class user_operation {
@@ -96,7 +97,7 @@ public class user_operation {
                     newsArrayList.get(order).setPrice(num1);
                     System.out.println("购买成功！");
                     //设置好了，进行排序
-                    sort_hotSearch(newsArrayList);
+                    //sort_hotSearch(newsArrayList);
                 }
                 //这个位序已经被人买了，要看钱够不够了
                 else if(newsArrayList.get(num-1).getPrice()!=0){
@@ -113,6 +114,7 @@ public class user_operation {
                         newsArrayList.get(order).setPrice(num1);
                         newsArrayList.remove(num-1);
                         System.out.println("购买成功！");
+                        //sort_hotSearch(newsArrayList);
                     }
                     //钱不够
                     else if(num1<1||newsArrayList.get(num-1).getPrice()>=num1){
@@ -188,11 +190,12 @@ public class user_operation {
             System.out.println("不存在该热搜，输入错误！");
         }
     }
-    //给热搜排序，包括index和hot两个点
+    /*错误示范：给热搜排序，每次投完票以及购买热搜过后都进行一次排序,针对两个分别处理
     static void sort_hotSearch(List<news> newsArrayList) {
         //先取出来那些竞过价的，把剩下的按热度排一遍，再把购买的按照定好的位序插入
         //取出来那些竞过价的
-        ArrayList< news > buy_list = new ArrayList < news > ();//新建列表
+        //if()
+        ArrayList<news> buy_list = new ArrayList<news>();//新建列表
         for (int i = 0; i < newsArrayList.size(); i++) {
             if (newsArrayList.get(i).getPrice() != 0) {//把购买过的拿出来
                 news event = new news();
@@ -204,38 +207,95 @@ public class user_operation {
                 newsArrayList.remove(i);//删掉
             }
         }
+        System.out.println("竞价的热搜有这么多个：" + buy_list.size());
+        System.out.println("此时原列表热搜有这么多个：" + newsArrayList.size());
         //竞过价的按照位序排一遍，等会好插入
-        Collections.sort(buy_list, new Comparator<news>(){
+        Collections.sort(buy_list, new Comparator<news>() {
             public int compare(news o1, news o2) {
                 //排序属性
-                if(o1.getIndex() < o2.getIndex()){
+                if (o1.getIndex() < o2.getIndex()) {
                     return 1;
                 }
-                if(o1.getIndex() == o2.getIndex()){
+                if (o1.getIndex() == o2.getIndex()) {
                     return 0;
                 }
                 return -1;
             }
         });
+        System.out.println("此时原列表热搜有这么多个：" + newsArrayList.size());
         //把列表中没有竞过价的按照热度排一遍
-        Collections.sort(newsArrayList, new Comparator<news>(){
+        Collections.sort(newsArrayList, new Comparator<news>() {
             public int compare(news o1, news o2) {
                 //排序属性
-                if(o1.getHot() < o2.getHot()){
+                if (o1.getHot() < o2.getHot()) {
                     return 1;
                 }
-                if(o1.getHot() == o2.getHot()){
+                if (o1.getHot() == o2.getHot()) {
                     return 0;
                 }
                 return -1;
             }
         });
-        //插入
+        System.out.println("此时原列表热搜有这么多个：" + newsArrayList.size());
+        /*插入的错误写法
         for(int i=0;i<buy_list.size();i++){
             newsArrayList.add(buy_list.get(i).getIndex()-1,buy_list.get(i));
         }
+        System.out.println("现在原列表热搜有这么多个："+newsArrayList.size());
     }
-
+        //插入
+        for(int i=0;i<buy_list.size();i++){
+            int direaction = buy_list.get(i).getIndex()-1;
+            news event = buy_list.get(i);
+            insert(newsArrayList,direaction,event);
+        }
+    }
+    static  void insert(List<news> newsArrayList,int direction,news event){
+        newsArrayList.add(direction,event);
+    }*/
+    //给热搜排序，思路是针对每个位置进行一一排入
+    static void sort_hotSearch(List<news> newsArrayList){
+        ArrayList<news> nobuy_list = new ArrayList<news>();//新建列表
+        for (int i = 0; i < newsArrayList.size(); i++) {
+            if (newsArrayList.get(i).getPrice() == 0) {//把未购买过的拿出来
+                nobuy_list.add(newsArrayList.get(i));//加入到新建列表中保存起来
+            }
+        }
+        //把没有参与竞价的热搜列表按照热度排一遍
+        Collections.sort(nobuy_list, new Comparator<news>() {
+            public int compare(news o1, news o2) {
+                //排序属性
+                if (o1.getHot() < o2.getHot()) {
+                    return 1;
+                }
+                if (o1.getHot() == o2.getHot()) {
+                    return 0;
+                }
+                return -1;
+            }
+        });
+        //这个循环将购买过的热搜位置定好
+        for(int i = 0; i < newsArrayList.size(); i++){
+            for(int j = i;j < newsArrayList.size(); j++){
+                //这个坑位被人占了，移动该对象
+                if((newsArrayList.get(j).getPrice()!=0)&&((newsArrayList.get(j).getIndex()-1)==i)){
+                    news event = newsArrayList.get(j);
+                    newsArrayList.remove(j);
+                    newsArrayList.add(i,event);
+                    break;
+                }
+            }
+        }
+        //这个循环将没有被购买的热搜一一排进去
+        int number=0;
+        for(int i=0;i<newsArrayList.size();i++){
+            if(newsArrayList.get(i).getPrice()==0){
+                number++;
+                newsArrayList.remove(i);
+                newsArrayList.add(i,nobuy_list.get(number-1));
+            }
+        }
+    }
     //判断热搜是否存在
     static String isExist(List<news> newsArrayList, String name) {
         boolean isExist = false;
